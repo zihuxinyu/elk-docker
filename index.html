@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Elasticsearch, Logstash, Kibana (ELK) Docker image by spujadas</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Elasticsearch, Logstash, Kibana (ELK) Docker image</h1>
+          <h2>Documentation</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/spujadas/elk-docker/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/spujadas/elk-docker/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/spujadas/elk-docker" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
+<a id="elasticsearch-logstash-kibana-elk-docker-image-documentation" class="anchor" href="#elasticsearch-logstash-kibana-elk-docker-image-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Elasticsearch, Logstash, Kibana (ELK) Docker image documentation</h1>
+
+<p>This web page documents how to use the <a href="https://hub.docker.com/r/sebp/elk/">sebp/elk</a> Docker image, which provides a convenient centralised log server and log management web interface, by packaging <a href="http://www.elasticsearch.org/">Elasticsearch</a>, <a href="http://logstash.net/">Logstash</a>, and <a href="http://www.elasticsearch.org/overview/kibana/">Kibana</a>, collectively known as ELK.</p>
+
+<h3>
+<a id="contents" class="anchor" href="#contents" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contents</h3>
+
+<ul>
+<li><a href="#installation">Installation</a></li>
+<li>
+<a href="#usage">Usage</a>
+
+<ul>
+<li><a href="#running-with-docker-compose">Running the container using Docker Compose</a></li>
+<li><a href="#creating-dummy-log-entry">Creating a dummy log entry</a></li>
+</ul>
+</li>
+<li>
+<a href="#forwarding-logs">Forwarding logs</a>
+
+<ul>
+<li><a href="#linking-containers">Linking a Docker container to the ELK container</a></li>
+</ul>
+</li>
+<li><a href="#building-image">Building the image</a></li>
+<li>
+<a href="#extending-image">Extending the image</a>
+
+<ul>
+<li><a href="#installing-elasticsearch-plugins">Installing Elasticsearch plugins</a></li>
+<li><a href="#installing-logstash-plugins">Installing Logstash plugins</a></li>
+</ul>
+</li>
+<li><a href="#storing-log-data">Storing log data</a></li>
+<li><a href="#security-considerations">Security considerations</a></li>
+<li><a href="#references">References</a></li>
+<li><a href="#about">About</a></li>
+</ul>
+
+<h2>
+<a id="installation-" class="anchor" href="#installation-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation <a name="installation"></a>
+</h2>
+
+<p>Install <a href="https://docker.com/">Docker</a>, either using a native package (Linux) or wrapped in a virtual machine (Windows, OS X – e.g. using <a href="http://boot2docker.io/">Boot2Docker</a> or <a href="https://www.vagrantup.com/">Vagrant</a>).</p>
+
+<p>To pull this image from the <a href="https://hub.docker.com/r/sebp/elk/">Docker registry</a>, open a shell prompt and enter:</p>
+
+<pre><code>$ sudo docker pull sebp/elk
+</code></pre>
+
+<p><strong>Note</strong> – This image has been built automatically from the source files in the <a href="https://github.com/spujadas/elk-docker">source Git repository on GitHub</a>. If you want to build the image yourself, see the <em><a href="#building-image">Building the image</a></em> section below.</p>
+
+<h2>
+<a id="usage-" class="anchor" href="#usage-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage <a name="usage"></a>
+</h2>
+
+<p>Run the container from the image with the following command:</p>
+
+<pre><code>$ sudo docker run -p 5601:5601 -p 9200:9200 -p 5000:5000 -it --name elk sebp/elk
+</code></pre>
+
+<p>This command publishes the following ports, which are needed for proper operation of the ELK stack:</p>
+
+<ul>
+<li>5601 (Kibana web interface).</li>
+<li>9200 (Elasticsearch JSON interface).</li>
+<li>5000 (Logstash server, receives logs from Logstash forwarders – see the <em><a href="#forwarding-logs">Forwarding logs</a></em> section below).</li>
+</ul>
+
+<p><strong>Note</strong> – The image also exposes Elasticsearch's transport interface on port 9300. Use the <code>-p 5300:5300</code> option with the <code>docker</code> command above to publish it.</p>
+
+<p>The figure below shows how the pieces fit together.</p>
+
+<p><img src="http://i.imgur.com/RVW12Md.png" alt=""></p>
+
+<p>Access Kibana's web interface by browsing to <code>http://&lt;your-host&gt;:5601</code>, where <code>&lt;your-host&gt;</code> is the hostname or IP address of the host Docker is running on (see note), e.g. <code>localhost</code> if running a local native version of Docker, or the IP address of the virtual machine if running a VM-hosted version of Docker (see note).</p>
+
+<p><strong>Note</strong> – To configure and/or find out the IP address of a VM-hosted Docker installation, see <a href="https://docs.docker.com/installation/windows/">https://docs.docker.com/installation/windows/</a> (Windows) and <a href="https://docs.docker.com/installation/mac/">https://docs.docker.com/installation/mac/</a> (OS X) for guidance if using Boot2Docker. If you're using <a href="https://www.vagrantup.com/">Vagrant</a>, you'll need to set up port forwarding (see <a href="https://docs.vagrantup.com/v2/networking/forwarded_ports.html">https://docs.vagrantup.com/v2/networking/forwarded_ports.html</a>.</p>
+
+<p>You can stop the container with <code>^C</code>, and start it again with <code>sudo docker start elk</code>.</p>
+
+<p>As from Kibana version 4.0.0, you won't be able to see anything (not even an empty dashboard) until something has been logged (see the <em><a href="#creating-dummy-log-entry">Creating a dummy log entry</a></em> sub-section below on how to test your set-up, and the <em><a href="#forwarding-logs">Forwarding logs</a></em> section on how to forward logs from regular applications).</p>
+
+<h3>
+<a id="running-the-container-using-docker-compose-" class="anchor" href="#running-the-container-using-docker-compose-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running the container using Docker Compose <a name="running-with-docker-compose"></a>
+</h3>
+
+<p>If you're using <a href="https://docs.docker.com/compose/">Docker Compose</a> to manage your Docker services (and if not you really should as it will make your life much easier!), then you can create an entry for the ELK Docker image by adding the following lines to your <code>docker-compose.yml</code> file:</p>
+
+<pre><code>elk:
+  image: sebp/elk
+  ports:
+    - "5601:5601"
+    - "9200:9200"
+    - "5000:5000"
+</code></pre>
+
+<p>You can then start the ELK container like this:</p>
+
+<pre><code>$ sudo docker-compose up elk
+</code></pre>
+
+<h3>
+<a id="creating-a-dummy-log-entry-" class="anchor" href="#creating-a-dummy-log-entry-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Creating a dummy log entry <a name="creating-dummy-log-entry"></a>
+</h3>
+
+<p>If you haven't got any logs yet and want to manually create a dummy log entry for test purposes (for instance to see the dashboard), first start the container as usual (<code>sudo docker run ...</code> or <code>docker-compose up ...</code>).</p>
+
+<p>In another terminal window, find out the name of the container running ELK, which is displayed in the last column of the output of the <code>sudo docker ps</code> command.</p>
+
+<pre><code>$ sudo docker ps
+CONTAINER ID        IMAGE                  ...   NAMES
+86aea21cab85        elkdocker_elk:latest   ...   elkdocker_elk_1
+</code></pre>
+
+<p>Open a shell prompt in the container and type (replacing <code>&lt;container-name&gt;</code> with the name of the container, e.g. <code>elkdocker_elk_1</code> in the example above):</p>
+
+<pre><code>$ sudo docker exec -it &lt;container-name&gt; /bin/bash
+</code></pre>
+
+<p>At the prompt, enter:</p>
+
+<pre><code># /opt/logstash/bin/logstash -e 'input { stdin { } } output { elasticsearch { host =&gt; localhost } }'
+</code></pre>
+
+<p>Wait for Logstash to start (as indicated by the message <code>Logstash startup completed</code>), then type some dummy text followed by Enter to create a log entry:</p>
+
+<pre><code>this is a dummy entry
+</code></pre>
+
+<p><strong>Note</strong> - You can create as many entries as you want. Use <code>^C</code> to go back to the bash prompt.</p>
+
+<p>If you browse to <code>http://&lt;your-host&gt;:9200/_search?pretty</code> (e.g. <a href="http://localhost:9200/_search?pretty">http://localhost:9200/_search?pretty</a> for a local native instance of Docker) you'll see that Elasticsearch has indexed the entry:</p>
+
+<pre><code>{
+  ...
+  "hits": {
+    ...
+    "hits": [ {
+      "_index": "logstash-...",
+      "_type": "logs",
+      ...
+      "_source": { "message": "this is a dummy entry", "@version": "1", "@timestamp": ... }
+    } ]
+  }
+}
+</code></pre>
+
+<p>You can now browse to Kibana's web interface at <code>http://&lt;your-host&gt;:5601</code> (e.g. <a href="http://localhost:5601">http://localhost:5601</a> for a local native instance of Docker).</p>
+
+<p>Make sure that the drop-down "Time-field name" field is pre-populated with the value <code>@timestamp</code>, then click on "Create", and you're good to go.</p>
+
+<h2>
+<a id="forwarding-logs-" class="anchor" href="#forwarding-logs-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Forwarding logs <a name="forwarding-logs"></a>
+</h2>
+
+<p>Forwarding logs from a host relies on a Logstash forwarder agent that collects logs (e.g. from log files, from the syslog daemon) and sends them to our instance of Logstash.</p>
+
+<p>Install <a href="https://github.com/elasticsearch/logstash-forwarder">Logstash forwarder</a> on the host you want to collect and forward logs from (see the <em><a href="#references">References</a></em> section below for links to detailed instructions).</p>
+
+<p>Here is a sample configuration file for Logstash forwarder, that forwards syslog and authentication logs, as well as <a href="http://nginx.org/">nginx</a> logs.</p>
+
+<pre><code>{
+  "network": {
+    "servers": [ "elk:5000" ],
+    "timeout": 15,
+    "ssl ca": "/etc/pki/tls/certs/logstash-forwarder.crt"
+  },
+  "files": [
+    {
+      "paths": [
+        "/var/log/syslog",
+        "/var/log/auth.log"
+       ],
+      "fields": { "type": "syslog" }
+    },
+    {
+      "paths": [
+        "/var/log/nginx/access.log"
+       ],
+      "fields": { "type": "nginx-access" }
+    }
+   ]
+}
+</code></pre>
+
+<p>By default (see <code>/etc/init.d/logstash-forwarder</code> if you need to tweak anything):</p>
+
+<ul>
+<li>The Logstash forwarder configuration file must be located in <code>/etc/logstash-forwarder</code>.</li>
+<li>The Logstash forwarder needs a syslog daemon (e.g. rsyslogd, syslog-ng) to be running.</li>
+</ul>
+
+<p>In the sample configuration file, make sure that you:</p>
+
+<ul>
+<li>Replace <code>elk</code> in <code>elk:5000</code> with the hostname or IP address of the ELK-serving host.</li>
+<li>Copy the <code>logstash-forwarder.crt</code> file (which contains the Logstash server's certificate) from the ELK image to <code>/etc/pki/tls/certs/logstash-forwarder.crt</code>.</li>
+</ul>
+
+<p><strong>Note</strong> – The ELK image includes configuration items (<code>/etc/logstash/conf.d/11-nginx.conf</code> and <code>/opt/logstash/patterns/nginx</code>) to parse nginx access logs, as forwarded by the Logstash forwarder instance above.</p>
+
+<h3>
+<a id="linking-a-docker-container-to-the-elk-container-" class="anchor" href="#linking-a-docker-container-to-the-elk-container-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Linking a Docker container to the ELK container <a name="linking-containers"></a>
+</h3>
+
+<p>If you want to forward logs from a Docker container to the ELK container, then you need to link the two containers.</p>
+
+<p><strong>Note</strong> – The log-emitting Docker container must have a Logstash forwarder agent running in it for this to work.</p>
+
+<p>First of all, give the ELK container a name (e.g. <code>elk</code>) using the <code>--name</code> option:</p>
+
+<pre><code>$ sudo docker run -p 5601:5601 -p 9200:9200 -p 5000:5000 -it --name elk sebp/elk
+</code></pre>
+
+<p>Then start the log-emitting container with the <code>--link</code> option (replacing <code>your/image</code> with the name of the Logstash-forwarder-enabled image you're forwarding logs from):</p>
+
+<pre><code>$ sudo docker run -p 80:80 -it --link elk:elk your/image
+</code></pre>
+
+<p>From the perspective of the log emitting container, the ELK container is now known as <code>elk</code>, which is the hostname to be used in the <code>logstash-forwarder</code> configuration file.</p>
+
+<p>With Compose here's what example entries for a (locally built log-generating) container and an ELK container might look like in the <code>docker-compose.yml</code> file.</p>
+
+<pre><code>yourapp:
+  image: your/image
+  ports:
+    - "80:80"
+  links:
+    - elk
+
+elk:
+  image: sebp/elk
+  ports:
+    - "5601:5601"
+    - "9200:9200"
+    - "5000:5000"
+</code></pre>
+
+<h2>
+<a id="building-the-image-" class="anchor" href="#building-the-image-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Building the image <a name="building-image"></a>
+</h2>
+
+<p>To build the Docker image from the source files, first clone the <a href="https://github.com/spujadas/elk-docker">Git repository</a>, go to the root of the cloned directory (i.e. the directory that contains <code>Dockerfile</code>), and:</p>
+
+<ul>
+<li><p>If you're using the vanilla <code>docker</code> command then run <code>sudo docker build -t &lt;repository-name&gt; .</code>, where <code>&lt;repository-name&gt;</code> is the repository name to be applied to the image, which you can then use to run the image with the <code>docker run</code> command.</p></li>
+<li><p>If you're using Compose then run <code>sudo docker-compose build elk</code>, which uses the <code>docker-compose.yml</code> file from the source repository to build the image. You can then run the built image with <code>sudo docker-compose up</code>.</p></li>
+</ul>
+
+<h2>
+<a id="extending-the-image-" class="anchor" href="#extending-the-image-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Extending the image <a name="extending-image"></a>
+</h2>
+
+<p>To extend the image, you can either fork the source Git repository and hack away, or – more in the spirit of the Docker philosophy – use the image as a base image and build on it, adding files (e.g. configuration files to process logs sent by log-producing applications, plugins for Elasticsearch) and overwriting files (e.g. configuration files, certificate and private key files) as required.</p>
+
+<p>To create a new image based on this base image, you want your <code>Dockerfile</code> to include:</p>
+
+<pre><code>FROM sebp/elk
+</code></pre>
+
+<p>followed by instructions to extend the image (see Docker's <a href="https://docs.docker.com/reference/builder/">Dockerfile Reference page</a> for more information).</p>
+
+<p>The next few subsections present some typical use cases.</p>
+
+<h3>
+<a id="installing-elasticsearch-plugins-" class="anchor" href="#installing-elasticsearch-plugins-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installing Elasticsearch plugins <a name="installing-elasticsearch-plugins"></a>
+</h3>
+
+<p>Elasticsearch's home directory in the image is <code>/usr/share/elasticsearch</code>, its <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-plugins.html">plugin management script</a> (<code>plugin</code>) resides in the <code>bin</code> subdirectory, and plugins are installed in <code>plugins</code>.</p>
+
+<p>A <code>Dockerfile</code> like the following will extend the base image and install Elastic HQ, a management and monitoring plugin for Elasticsearch, using <code>plugin</code>.</p>
+
+<pre><code>FROM sebp/elk
+
+ENV ES_HOME /usr/share/elasticsearch
+WORKDIR ${ES_HOME}
+
+RUN bin/plugin -i royrusso/elasticsearch-HQ
+</code></pre>
+
+<p>You can now build the new image (see the <em><a href="#building-image">Building the image</a></em> section above) and run the container in the same way as you did with the base image. The Elastic HQ interface will be accessible at <code>http://&lt;your-host&gt;:9200/_plugin/HQ/</code> (e.g. <a href="http://localhost:9200/_plugin/HQ/">http://localhost:9200/_plugin/HQ/</a> for a local native instance of Docker).</p>
+
+<h3>
+<a id="installing-logstash-plugins-" class="anchor" href="#installing-logstash-plugins-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installing Logstash plugins <a name="installing-logstash-plugins"></a>
+</h3>
+
+<p>The name of Logstash's home directory in the image is stored in the <code>LOGSTASH_HOME</code> environment variable (which is set to <code>/opt/logstash</code> in the base image). Logstash's plugin management script (<code>plugin</code>) is located in the <code>bin</code> subdirectory.</p>
+
+<p>The following <code>Dockerfile</code> can be used to extend the base image and install the <a href="https://www.elastic.co/guide/en/logstash/current/plugins-inputs-rss.html">RSS input plugin</a>:</p>
+
+<pre><code>FROM sebp/elk
+
+WORKDIR ${LOGSTASH_HOME}
+RUN bin/plugin install logstash-input-rss
+</code></pre>
+
+<p>See the <em><a href="#building-image">Building the image</a></em> section above for instructions on building the new image. You can then run a container based on this image using the same command line as the one in the <em><a href="#usage">Usage</a></em> section.</p>
+
+<h2>
+<a id="storing-log-data-" class="anchor" href="#storing-log-data-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Storing log data <a name="storing-log-data"></a>
+</h2>
+
+<p>In order to keep log data across container restarts, this image mounts <code>/var/lib/elasticsearch</code> — which is the directory that Elasticsearch stores its data in — as a volume.</p>
+
+<p>You may however want to use a dedicated data volume to store this log data, for instance to facilitate back-up and restore operations.</p>
+
+<p>One way to do this with the <code>docker</code> command-line tool is to first create a named container called <code>elk_data</code> with a bound Docker volume by using the <code>-v</code> option:</p>
+
+<pre><code>$ sudo docker run -p 5601:5601 -p 9200:9200 -5000:5000 -v /var/lib/elasticsearch --name elk_data sebp/elk
+</code></pre>
+
+<p>You can now reuse the persistent volume from that container using the <code>--volumes-from</code> option:</p>
+
+<pre><code>$ sudo docker run -p 5601:5601 -p 9200:9200 -p 5000:5000 --volumes-from elk_data --name elk sebp/elk
+</code></pre>
+
+<p><strong>Note</strong> – By design, Docker never deletes a volume automatically (e.g. when no longer used by any container). Whilst this avoids accidental data loss, it also means that things can become messy if you're not managing your volumes properly (i.e. using the <code>-v</code> option when removing containers with <code>docker rm</code> to also delete the volumes... bearing in mind that the actual volume won't be deleted as long as at least one container is still referencing it, even if it's not running). As of this writing, managing Docker volumes can be a bit of a headache, so you might want to have a look at <a href="https://github.com/chadoe/docker-cleanup-volumes">docker-cleanup-volumes</a>, a shell script that deletes unused Docker volumes.</p>
+
+<p>See Docker's page on <a href="https://docs.docker.com/userguide/dockervolumes/">Managing Data in Containers</a> and Container42's <a href="http://container42.com/2014/11/03/docker-indepth-volumes/">Docker In-depth: Volumes</a> page for more information on managing data volumes.</p>
+
+<h2>
+<a id="security-considerations-" class="anchor" href="#security-considerations-" aria-hidden="true"><span class="octicon octicon-link"></span></a>Security considerations <a name="security-considerations"></a>
+</h2>
+
+<p>As it stands this image is meant for local test use, and as such hasn't been secured: access to the ELK services is not restricted, and a default authentication server certificate (<code>logstash-forwarder.crt</code>) and private key (<code>logstash-forwarder.key</code>) are bundled with the image.</p>
+
+<p>To harden this image, at the very least you would want to:</p>
+
+<ul>
+<li>Restrict the access to the ELK services to authorised hosts/networks only, as described in e.g. <a href="http://www.elasticsearch.org/blog/scripting-security/">Elasticsearch Scripting and Security</a> and <a href="http://blog.eslimasec.com/2014/05/elastic-security-deploying-logstash.html">Elastic Security: Deploying Logstash, ElasticSearch, Kibana "securely" on the Internet</a>.</li>
+<li>Password-protect the access to Kibana and Elasticsearch (see <a href="http://technosophos.com/2014/03/19/ssl-password-protection-for-kibana.html">SSL And Password Protection for Kibana</a>).</li>
+<li>Generate a new self-signed authentication certificate for the Logstash server (<code>cd /etc/pki/tls; sudo openssl req -x509 -batch -nodes -days 3650 -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt</code> for a 10-year certificate) or (better) get a proper certificate from a commercial provider (known as a certificate authority), and keep the private key private.</li>
+</ul>
+
+<h2>
+<a id="references-" class="anchor" href="#references-" aria-hidden="true"><span class="octicon octicon-link"></span></a>References <a name="references"></a>
+</h2>
+
+<ul>
+<li><a href="https://www.digitalocean.com/community/tutorials/how-to-install-elasticsearch-logstash-and-kibana-4-on-ubuntu-14-04">How To Install Elasticsearch, Logstash, and Kibana 4 on Ubuntu 14.04</a></li>
+<li><a href="http://www.dockerbook.com/">The Docker Book</a></li>
+<li><a href="http://www.logstashbook.com/">The Logstash Book</a></li>
+<li><a href="https://www.elastic.co/guide/index.html">Elastic's reference documentation</a></li>
+</ul>
+
+<h2>
+<a id="about-" class="anchor" href="#about-" aria-hidden="true"><span class="octicon octicon-link"></span></a>About <a name="about"></a>
+</h2>
+
+<p>Written by <a href="https://pujadas.net">Sébastien Pujadas</a>, released under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2 license</a>.</p>
+        </section>
+
+        <footer>
+          Elasticsearch, Logstash, Kibana (ELK) Docker image is maintained by <a href="https://github.com/spujadas">spujadas</a><br>
+          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
